@@ -25,7 +25,7 @@ def modifyRootIndex(projectPath,projectName):
 			indexIOSFile.write(result)
 
 # 创建App index.js文件
-def createAppIndex(projectPath,appPath,moduleDict):
+def createAppIndex(projectPath,appPath,componentModule):
 	# 读取模板文件
 	with open(os.path.join(projectPath,'templet','app_index_tmp.js'),'r') as tempAppFile:
 		
@@ -33,7 +33,7 @@ def createAppIndex(projectPath,appPath,moduleDict):
 		component_replace_str = ''
 
 		# 需要import的modules
-		for k,values in moduleDict.items():
+		for k,values in componentModule.items():
 			components = ''
 			for v in values:
 				components += v + ','
@@ -67,11 +67,11 @@ if __name__ == '__main__':
 
 	# print projectPath
 
-	# 需要导入的模块名以及所属的组件名
-	moduleDict = {'tfn_rn':['MyText','MyButton']}
+	# 需要导入的与UI组件相关的模块名及需要的组件名
+	componentModule = {'tfn_rn':['MyText','MyButton']}
 
-	# 需要导入的组件名，他们都属于tfn_rn模块
-	# componentList = ['MyText','MyButton']
+	# 需要导入的非UI模块名
+	dependencyModule = ['fbemitter']
 
 	# 初始化RN工程
 	os.system('cd %s && react-native init %s' % (projectPath,projectName))
@@ -84,10 +84,11 @@ if __name__ == '__main__':
 	os.system('mkdir -p %s' % appPath)
 
 	# npm install，将需要的模块依次安装
-	map(lambda x:os.system('cd %s && npm install --save %s' % (rootPath,x)),moduleDict.keys())
+	map(lambda x:os.system('cd %s && npm install --save %s' % (rootPath,x)),componentModule.keys())
+	map(lambda x:os.system('cd %s && npm install --save %s' % (rootPath,x)),dependencyModule)
 
 	# 修改index.android.js和index.ios.js文件
 	modifyRootIndex(projectPath,projectName)
 
 	# 在	app文件夹下创建index.js文件
-	createAppIndex(projectPath,appPath,moduleDict)
+	createAppIndex(projectPath,appPath,componentModule)
