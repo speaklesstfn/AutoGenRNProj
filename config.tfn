@@ -1,0 +1,11 @@
+[base]
+projectName=AAAutoGenRNDemo
+projectPath=
+dependencyModule=tfn_rn
+
+[page]
+page1=home{tfn_rn:MyText,MyButton}
+page2=result{tfn_rn:MyText}
+
+[default]
+default=home

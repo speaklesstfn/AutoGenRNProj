@@ -1,29 +1,16 @@
 import React, { Component } from 'react';
 import {
   AppRegistry,
-  StyleSheet,
-  View
 } from 'react-native';
 
-import App from './app/index';
+import App from './app/App';
 
-export default class projectName extends Component {
+export default class xProjectName extends Component {
   render() {
     return (
-      <View style={styles.container}>
         <App />
-      </View>
     );
   }
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5FCFF',
-  },
-});
-
-AppRegistry.registerComponent('projectName', () => projectName);
+AppRegistry.registerComponent('xProjectName', () => xProjectName);

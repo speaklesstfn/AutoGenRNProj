@@ -3,7 +3,19 @@
 
 import os,re,sys
 
+import ConfigParser 
+
 '自动生成RN工程并自动导入设定的库'
+
+# 安装babel插件，用于支持@（decorator）特性：
+def installBabel(rootPath):
+	os.system('cd %s && npm i babel-plugin-transform-decorators-legacy babel-preset-react-native-stage-0 --save-dev' % rootPath)
+
+	content = '{\n"presets": ["react-native"],\n"plugins": ["transform-decorators-legacy"]\n}'
+
+	# 修改.babelrc文件
+	with open(os.path.join(rootPath,'.babelrc'),'w') as babelFile:
+		babelFile.write(content)
 
 # 修改index.android.js和index.ios.js文件
 def modifyRootIndex(projectPath,projectName):
@@ -11,7 +23,7 @@ def modifyRootIndex(projectPath,projectName):
 	with open(os.path.join(projectPath,'templet','root_index_tmp.js'),'r') as tempIndexFile:
 
 		# 获取匹配对象
-		re_pro = re.compile(r'projectName')
+		re_pro = re.compile(r'xProjectName')
 		temp = tempIndexFile.read()
 		result,number = re_pro.subn(projectName,temp)
 
@@ -24,71 +36,164 @@ def modifyRootIndex(projectPath,projectName):
 		with open(os.path.join(projectPath,projectName,'index.ios.js'),'w') as indexIOSFile:
 			indexIOSFile.write(result)
 
-# 创建App index.js文件
-def createAppIndex(projectPath,appPath,componentModule):
+# 创建app/App.js文件
+def createApp(projectPath,rootPath,defaultRoute):
 	# 读取模板文件
-	with open(os.path.join(projectPath,'templet','app_index_tmp.js'),'r') as tempAppFile:
-		
-		module_replace_str = ''
-		component_replace_str = ''
-
-		# 需要import的modules
-		for k,values in componentModule.items():
-			components = ''
-			for v in values:
-				components += v + ','
-				component_replace_str += '<' + v + '/>\n'
-
-			# 移除最后的一个','
-			components = components[:-1]
-
-			temp_str = 'import {%s} from \'%s\'\n' % (components,k)
-			module_replace_str += temp_str
-
-		# 获取匹配对象，包括两个，一个是需要导入的模块名，还有一个是模块下面需要导入的Component名
-		re_module = re.compile(r'importModules')
-		re_component = re.compile(r'importComponents')
+	with open(os.path.join(projectPath,'templet','app_tmp.js'),'r') as tempAppFile:
+		re_default = re.compile(r'xHomePath')
 		temp = tempAppFile.read()
-		result_module,num_module = re_module.subn(module_replace_str,temp)
-		result,number = re_component.subn(component_replace_str,result_module)
+		result,number = re_default.subn(defaultRoute,temp)
 
-		# 创建app/index.js文件，并把result的内容存入
-		with open(os.path.join(appPath,'index.js'),'w') as indexFile:
-			indexFile.write(result)
+		# 创建app/App.js文件，并把result的内容存入
+		with open(os.path.join(rootPath,'app','App.js'),'w') as appFile:
+			appFile.write(result)
 
+# 创建总路由index.js
+def createRouteIndex(projectPath,rootPath,pageNames):
+	with open(os.path.join(projectPath,'templet','pages_index_tmp.js'),'r') as tempIndexFile:
+		import_replace_str = ''
+		route_replace_str = ''
+
+		re_import = re.compile(r'xImportRootChildRoutes')
+		re_route = re.compile(r'xRootChildRoutes')
+
+		for name in pageNames:
+			import_replace_str += 'import %s from \'./%s\';\n' % (name,name)			
+			route_replace_str += '\t\t' + name + ',\n'
+
+		temp = tempIndexFile.read()
+		result_import,num_import = re_import.subn(import_replace_str,temp)
+		result_route,num_reoute = re_route.subn(route_replace_str,result_import)
+
+		with open(os.path.join(rootPath,'app','pages','index.js'),'w') as indexFile:
+			indexFile.write(result_route)
+
+# 创建相应页面的路由index.js
+def createPageIndex(projectPath,rootPath,pageName):
+	pagePath = os.path.join(rootPath,'app','pages',pageName)
+	os.system('mkdir -p %s' % pagePath)
+	with open(os.path.join(projectPath,'templet','page_index_tmp.js'),'r') as tempIndexFile:
+		
+		import_replace_str = 'import %s from \'./%s\';\n' % (pageName[:1].upper() + pageName[1:],pageName[:1].upper() + pageName[1:])
+		path_replace_str = pageName
+		route_replace_str = pageName[:1].upper() + pageName[1:]
+
+		re_import = re.compile(r'xImportPageRoute')
+		re_path = re.compile(r'xChildParth')
+		re_route = re.compile(r'xPageRoute')
+		temp = tempIndexFile.read()
+		result_import,num_import = re_import.subn(import_replace_str,temp)
+		result_path,num_path = re_path.subn(path_replace_str,result_import)
+		result_route,num_reoute = re_route.subn(route_replace_str,result_path)
+
+		with open(os.path.join(pagePath,'index.js'),'w') as indexFile:
+			indexFile.write(result_route)
+
+# 创建相应页面的js
+def createPage(projectPath,rootPath,pageName,pageComp):
+	pagePath = os.path.join(rootPath,'app','pages',pageName)
+	with open(os.path.join(projectPath,'templet','page_tmp.js'),'r') as tempNameFile:
+		import_replace_str = ''
+		component_replace_str = ''
+		path_replace_str = pageName
+		name_replace_str = pageName[:1].upper() + pageName[1:]
+
+		for eachComp in pageComp.split('|'):
+			comps = eachComp.split(':')
+			importModule = comps[0]
+			importComps = comps[1].split(',')
+
+			temp_str = 'import {%s} from \'%s\';\n' % (comps[1],importModule)
+			import_replace_str += temp_str
+
+			for v in importComps:
+				component_replace_str += '\t\t\t\t' + '<' + v + '/>\n'
+
+		re_import = re.compile(r'xImportModules')
+		re_comp = re.compile(r'xImportComponents')
+		re_path = re.compile(r'xPagePath')
+		re_name = re.compile(r'xPageName')
+		temp = tempNameFile.read()
+		result_import,num_import = re_import.subn(import_replace_str,temp)
+		result_comp,num_comp = re_comp.subn(component_replace_str,result_import)
+		result_path,num_path = re_path.subn(path_replace_str,result_comp)
+		result_name,num_name = re_name.subn(name_replace_str,result_path)
+
+		name = pageName[:1].upper() + pageName[1:]
+
+		with open(os.path.join(pagePath,'%s.js' % name),'w') as nameFile:
+			nameFile.write(result_name)	
+
+# 读取配置文件，获取需要的插件信息，然后初始化
+def init(currentPath):
+
+	config=ConfigParser.ConfigParser() 
+
+	# 读取配置文件
+	with open(os.path.join(currentPath,'config.tfn'),'r') as configFile:
+		
+		config.readfp(configFile)
+
+		# 需要创建的RN工程名，默认AutoGenRNDemo
+		projectName = config.get('base','projectName') or 'AutoGenRNDemo'
+
+		# 工程创建的位置，默认在当前脚本目录下创建RN工程
+		projectPath = config.get('base','projectPath') or os.path.split(os.path.realpath(__file__))[0]
+
+		# 初始化RN工程
+		os.system('cd %s && react-native init %s' % (projectPath,projectName))
+
+		# 工程根目录
+		rootPath = os.path.join(projectPath,projectName)
+
+		# 将templet文件夹下的app文件夹及其子文件复制到在工程根目录下
+		os.system('cp -r %s %s' % (os.path.join(currentPath,'templet','app'),rootPath))
+
+		# 修改index.android.js和index.ios.js文件
+		modifyRootIndex(projectPath,projectName)
+
+		# 获取默认路由
+		defaultRoute = config.get('default','default')
+
+		# 创建app/App.js文件
+		createApp(projectPath,rootPath,defaultRoute)
+
+		dependen = config.get('base','dependencyModule').split(',')
+
+		# 需要导入的模块名
+		dependencyModule = dependen
+		
+		# npm install，将需要的模块依次安装
+		map(lambda x:os.system('cd %s && npm install --save %s ' % (rootPath,x)),dependencyModule)
+
+		os.system('cd %s && npm install --save react-router@3.0.2' % rootPath)
+
+		installBabel(rootPath)
+
+		# 读取配置文件的page这个section，获取需要生成的页面数以及每个页面需要导入的Component
+		pageNum = len(config.options('page'))
+
+		pageNames = []
+
+		for index in range(1,pageNum+1):
+			eachPage = config.get('page','page%d' % index)
+			# 分割，得到页面的名称
+			pageName = eachPage[:eachPage.index('{')]
+
+			# 创建相应页面的路由index.js
+			createPageIndex(projectPath,rootPath,pageName)
+
+			pageNames.append(pageName)
+
+			pageComp = eachPage[eachPage.index('{') + 1:len(eachPage) - 1]
+
+			createPage(projectPath,rootPath,pageName,pageComp)
+
+		createRouteIndex(projectPath,rootPath,pageNames)
 
 if __name__ == '__main__':
 
-	# 需要创建的RN工程名
-	projectName = 'AutoGenRNDemo'
+	# 当前python文件的路径
+	currentPath = os.path.split(os.path.realpath(__file__))[0]
 
-	# 工程创建的位置，我们就在当前脚本目录下创建RN工程
-	projectPath = os.path.split(os.path.realpath(__file__))[0]
-
-	# print projectPath
-
-	# 需要导入的与UI组件相关的模块名及需要的组件名
-	componentModule = {'tfn_rn':['MyText','MyButton']}
-
-	# 需要导入的非UI模块名
-	dependencyModule = ['fbemitter']
-
-	# 初始化RN工程
-	os.system('cd %s && react-native init %s' % (projectPath,projectName))
-
-	rootPath = os.path.join(projectPath,projectName)
-
-	appPath = os.path.join(rootPath,'app')
-
-	# 在工程根目录下创建app文件夹
-	os.system('mkdir -p %s' % appPath)
-
-	# npm install，将需要的模块依次安装
-	map(lambda x:os.system('cd %s && npm install --save %s' % (rootPath,x)),componentModule.keys())
-	map(lambda x:os.system('cd %s && npm install --save %s' % (rootPath,x)),dependencyModule)
-
-	# 修改index.android.js和index.ios.js文件
-	modifyRootIndex(projectPath,projectName)
-
-	# 在	app文件夹下创建index.js文件
-	createAppIndex(projectPath,appPath,componentModule)
+	init(currentPath)
