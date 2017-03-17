@@ -1,11 +1,13 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
+'自动生成RN工程并自动导入设定的库'
+
+__author__ = 'TFN'
 
 import os,re,sys
 
-import ConfigParser 
-
-'自动生成RN工程并自动导入设定的库'
+import configparser 
 
 # 安装babel插件，用于支持@（decorator）特性：
 def installBabel(rootPath):
@@ -127,7 +129,7 @@ def createPage(projectPath,rootPath,pageName,pageComp):
 # 读取配置文件，获取需要的插件信息，然后初始化
 def init(currentPath):
 
-	config=ConfigParser.ConfigParser() 
+	config=configparser.ConfigParser() 
 
 	# 读取配置文件
 	with open(os.path.join(currentPath,'config.tfn'),'r') as configFile:
@@ -158,13 +160,11 @@ def init(currentPath):
 		# 创建app/App.js文件
 		createApp(projectPath,rootPath,defaultRoute)
 
-		dependen = config.get('base','dependencyModule').split(',')
-
 		# 需要导入的模块名
-		dependencyModule = dependen
-		
+		dependencyModule = config.get('base','dependencyModule').split(',')
+
 		# npm install，将需要的模块依次安装
-		map(lambda x:os.system('cd %s && npm install --save %s ' % (rootPath,x)),dependencyModule)
+		list(map(lambda x:os.system('cd %s && npm install --save %s ' % (rootPath,x)),dependencyModule))
 
 		os.system('cd %s && npm install --save react-router@3.0.2' % rootPath)
 
