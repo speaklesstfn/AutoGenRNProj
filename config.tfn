@@ -1,6 +1,6 @@
 [base]
-projectName=AAAutoGenRNDemo
-projectPath=
+RNProjName=AAAutoGenRNDemo
+RNProjPath=
 dependencyModule=tfn_rn
 
 [page]
