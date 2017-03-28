@@ -698,7 +698,7 @@ if __name__ == '__main__':
 
 ```shell
 
-python xx/xx/AutoGenRNProj/auto_gen_rn.py
+python3 xx/xx/AutoGenRNProj/auto_gen_rn.py
 
 ```
 
