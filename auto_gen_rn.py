@@ -50,6 +50,19 @@ def createApp(pythonPath,RNRootPath,defaultRoute):
 		with open(os.path.join(RNRootPath,'app','App.js'),'w') as appFile:
 			appFile.write(result)
 
+# 创建导航栏NvaBar.js文件
+def createNavBar(pythonPath,RNRootPath,navBarBackgroundColor):
+	# 读取模板文件
+	with open(os.path.join(pythonPath,'templet','nav_bar_tmp.js'),'r') as tempNavBarFile:
+		re_bg = re.compile(r'xNavBarBGColor')
+
+		temp = tempNavBarFile.read()
+		result,number = re_bg.subn(navBarBackgroundColor,temp)
+
+		# 创建app/pages/NavBar.js文件，并把result的内容存入
+		with open(os.path.join(RNRootPath,'app','pages','NavBar.js'),'w') as navBarFile:
+			navBarFile.write(result)
+
 # 创建总路由index.js
 def createRouteIndex(pythonPath,RNRootPath,pageNames):
 	with open(os.path.join(pythonPath,'templet','pages_index_tmp.js'),'r') as tempIndexFile:
@@ -169,6 +182,11 @@ def init(pythonPath):
 		os.system('cd %s && npm install --save react-router@3.0.2' % RNRootPath)
 
 		installBabel(RNRootPath)
+
+		# 读取导航栏的背景颜色，默认颜色#db2f37
+		navBarBackgroundColor = config.get('base','navBarBackgroundColor') or '#db2f37'
+		# 创建导航栏NvaBar.js文件
+		createNavBar(pythonPath,RNRootPath,navBarBackgroundColor)
 
 		# 读取配置文件的page这个section，获取需要生成的页面数以及每个页面需要导入的Component
 		pageNum = len(config.options('page'))

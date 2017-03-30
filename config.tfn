@@ -2,6 +2,7 @@
 RNProjName=AAAutoGenRNDemo
 RNProjPath=
 dependencyModule=tfn_rn
+navBarBackgroundColor=
 
 [page]
 page1=home{tfn_rn:MyText,MyButton}
