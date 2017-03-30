@@ -2,6 +2,10 @@
 
 ***Python脚本文件从2.x更新到3.x***
 
+### ***2017-03-30 更新***
+
+***增加NavBar背景颜色可配置***
+
 # 可配置Python脚本自动生成多页面RN工程并初始化
 
 
@@ -26,7 +30,7 @@
 
 
 
-![总结构](http://ok0hyxdgr.bkt.clouddn.com/17-3-14/834601-file_1489474254280_e827.png)
+![总结构](http://ok0hyxdgr.bkt.clouddn.com/17-3-30/4504617-file_1490849680632_14cdd.png)
 
 
 
@@ -56,6 +60,7 @@ RNProjPath=
 
 dependencyModule=tfn_rn
 
+navBarBackgroundColor=
 
 
 [page]
@@ -78,7 +83,7 @@ default=home
 
 
 
-1. base：该section主要定义基本的属性，包括需要创建的RN工程的名称RNProjName（如果不填，默认AutoGenRNDemo），RN工程的创建路径（如果不填，默认是Python脚本所在路径）和RN工程的依赖库dependencyModule（脚本里默认会安装react-router和bebel插件来支持decorator特性）；
+1. base：该section主要定义基本的属性，包括需要创建的RN工程的名称RNProjName（如果不填，默认AutoGenRNDemo），RN工程的创建路径（如果不填，默认是Python脚本所在路径）、RN工程的依赖库dependencyModule（脚本里默认会安装react-router和bebel插件来支持decorator特性）和页面导航标题栏NavBar的背景颜色值navBarBackgroundColor（，设置的颜色值使用#xxxxxx的格式表示，默认颜色值为#db2f37）；
 
 
 
@@ -110,11 +115,11 @@ default=home
 
 
 
-* 一部分是app文件夹，这个文件夹里的模板文件包括文件夹，都是固定不变的，里面主要是一些与React-Router有关的工具类和统一标题栏；
+* 一部分是app文件夹，这个文件夹里的模板文件包括文件夹，都是固定不变的，里面主要是一些与React-Router有关的工具类；
 
 
 
-* 另一部分是5个js文件，这五个js文件是真正的模板文件，其中有些内容是在生成具体文件时替换的：
+* 另一部分是6个js文件，这六个js文件是真正的模板文件，其中有些内容是在生成具体文件时替换的：
 
 
 
@@ -302,7 +307,134 @@ default=home
 
         该模板文件中需要替换的是初始路由**xHomePath**，这个值直接从配置文件中的default这个section中读取。
 
-        
+    * **nav_bar_tmp.js**：该模板文件最终会在工程app/pages文件夹下生成NavBar.js文件，它的作用是用来规范应用的导航栏标题信息。
+
+
+
+        ```js
+        import React, {Component, PropTypes} from 'react';
+
+        import {
+            View,
+            Image,
+            TouchableOpacity,
+            Text,
+            StyleSheet,
+        } from 'react-native';
+        import backImage from './assets/back.png';
+
+        const styles = StyleSheet.create({
+            container: {
+                flex: 1,
+            },
+            navBar: {
+                height: 44,
+                paddingTop: 0,
+                backgroundColor: 'xNavBarBGColor',
+                justifyContent: 'center',
+                alignItems: 'center',
+                paddingHorizontal: 70,
+            },
+            title: {
+                color: 'white',
+                fontSize: 20,
+            },
+            left: {
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                bottom: 0,
+                justifyContent: 'center',
+                paddingHorizontal: 15,
+            },
+            right: {
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                bottom: 0,
+                justifyContent: 'center',
+                paddingHorizontal: 15,
+            },
+            button: {
+                color: 'white',
+                fontSize: 15,
+            },
+        });
+
+        export default class NavBar extends Component {
+            static contextTypes = {
+                navigator: PropTypes.object,
+                currentRoute: PropTypes.object,
+            };
+            static propTypes = {
+                children: PropTypes.element,
+                routes: PropTypes.arrayOf(PropTypes.object),
+            };
+            onLeftPressed = () => {
+                if (this.childrenRef && this.childrenRef.onLeftPressed) {
+                    this.childrenRef.onLeftPressed();
+                } else {
+                    this.context.navigator.pop();
+                }
+            };
+            onRightPressed = () => {
+                if (this.childrenRef && this.childrenRef.onRightPressed) {
+                    this.childrenRef.onRightPressed();
+                }
+            };
+            getRef = (ref) => {
+                this.childrenRef = ref;
+            };
+
+            renderBack() {
+                return (
+                    <TouchableOpacity style={styles.left} onPress={this.onLeftPressed}>
+                        <Image source={backImage}/>
+                    </TouchableOpacity>
+                );
+            }
+
+            render() {
+                const {children, routes} = this.props;
+                const routeConfig = routes[routes.length - 1] || {};
+                if (children === null) {
+                    console.error('childrendfdffdf');
+                }
+                const {navigator, currentRoute} = this.context;
+                const currentIndex = navigator.getCurrentRoutes().indexOf(currentRoute);
+                console.log('current route index:' + currentIndex);
+                const {leftNavTitle: left, rightNavTitle: right} = routeConfig;
+
+                return (
+                    <View style={styles.container}>
+                        {
+                            !routeConfig.hideNavBar &&
+                            <View style={styles.navBar}>
+                                <Text style={styles.title} numberOfLines={1}>{routeConfig.title}</Text>
+                                { currentIndex > 0 && !left && this.renderBack() }
+                                {
+                                    left && <TouchableOpacity style={styles.left} onPress={this.onLeftPressed}>
+                                        <Text style={styles.button}>{left}</Text>
+                                    </TouchableOpacity>
+                                }
+                                {
+                                    right && <TouchableOpacity style={styles.right} onPress={this.onRightPressed}>
+                                        <Text style={styles.button}>{right}</Text>
+                                    </TouchableOpacity>
+                                }
+                            </View>
+                        }
+                        {/*加入children是否为null判断*/}
+                        {children && React.cloneElement(children, {ref: this.getRef})}
+                    </View>
+                );
+            }
+        }
+
+        ```
+
+
+        其中xNavBarBGColor是需要替换的内容，它表示导航栏的背景颜色。
 
     * **pages_index_tmp.js**：该模板文件最终会在工程app/pages文件夹下生成index.js文件，它的作用是用来定义根路由以及它的子路由等信息。
 
@@ -492,6 +624,19 @@ def createApp(pythonPath,RNRootPath,defaultRoute):
         with open(os.path.join(RNRootPath,'app','App.js'),'w') as appFile:
             appFile.write(result)
 
+# 创建导航栏NvaBar.js文件
+def createNavBar(pythonPath,RNRootPath,navBarBackgroundColor):
+    # 读取模板文件
+    with open(os.path.join(pythonPath,'templet','nav_bar_tmp.js'),'r') as tempNavBarFile:
+        re_bg = re.compile(r'xNavBarBGColor')
+
+        temp = tempNavBarFile.read()
+        result,number = re_bg.subn(navBarBackgroundColor,temp)
+
+        # 创建app/pages/NavBar.js文件，并把result的内容存入
+        with open(os.path.join(RNRootPath,'app','pages','NavBar.js'),'w') as navBarFile:
+            navBarFile.write(result)
+
 # 创建总路由index.js
 def createRouteIndex(pythonPath,RNRootPath,pageNames):
     with open(os.path.join(pythonPath,'templet','pages_index_tmp.js'),'r') as tempIndexFile:
@@ -612,6 +757,11 @@ def init(pythonPath):
 
         installBabel(RNRootPath)
 
+        # 读取导航栏的背景颜色，默认颜色#db2f37
+        navBarBackgroundColor = config.get('base','navBarBackgroundColor') or '#db2f37'
+        # 创建导航栏NvaBar.js文件
+        createNavBar(pythonPath,RNRootPath,navBarBackgroundColor)
+
         # 读取配置文件的page这个section，获取需要生成的页面数以及每个页面需要导入的Component
         pageNum = len(config.options('page'))
 
@@ -676,15 +826,19 @@ if __name__ == '__main__':
 
 
 
-8. 创建相应页面文件夹以及该页面的路由index.js文件；
+8. 创建总的导航栏NavBar.js文件；
 
 
 
-9. 创建相应页面文件；
+9. 创建相应页面文件夹以及该页面的路由index.js文件；
 
 
 
-10. 创建总路由index.js文件。
+10. 创建相应页面文件；
+
+
+
+11. 创建总路由index.js文件。
 
 
 
