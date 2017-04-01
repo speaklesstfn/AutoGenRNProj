@@ -11,6 +11,7 @@ import sys
 
 import configparser
 
+
 # 安装babel插件，用于支持@（decorator）特性：
 
 
@@ -25,13 +26,13 @@ def installBabel(RNRootPath):
     with open(os.path.join(RNRootPath, '.babelrc'), 'w') as babelFile:
         babelFile.write(content)
 
+
 # 修改index.android.js和index.ios.js文件
 
 
 def modifyRootIndex(pythonPath, RNRootPath, RNProjectName):
     # 读取模板文件
     with open(os.path.join(pythonPath, 'templet', 'root_index_tmp.js'), 'r') as tempIndexFile:
-
         # 获取匹配对象
         re_pro = re.compile(r'xProjectName')
         temp = tempIndexFile.read()
@@ -45,6 +46,7 @@ def modifyRootIndex(pythonPath, RNRootPath, RNProjectName):
 
         with open(os.path.join(RNRootPath, 'index.ios.js'), 'w') as indexIOSFile:
             indexIOSFile.write(result)
+
 
 # 创建app/App.js文件
 
@@ -60,6 +62,7 @@ def createApp(pythonPath, RNRootPath, defaultRoute):
         with open(os.path.join(RNRootPath, 'app', 'App.js'), 'w') as appFile:
             appFile.write(result)
 
+
 # 创建导航栏NvaBar.js文件
 
 
@@ -74,6 +77,7 @@ def createNavBar(pythonPath, RNRootPath, navBarBackgroundColor):
         # 创建app/pages/NavBar.js文件，并把result的内容存入
         with open(os.path.join(RNRootPath, 'app', 'pages', 'NavBar.js'), 'w') as navBarFile:
             navBarFile.write(result)
+
 
 # 创建总路由index.js
 
@@ -92,11 +96,12 @@ def createRouteIndex(pythonPath, RNRootPath, pageNames):
 
         temp = tempIndexFile.read()
         result_import, num_import = re_import.subn(import_replace_str, temp)
-        result_route, num_reoute = re_route.subn(
+        result_route, num_route = re_route.subn(
             route_replace_str, result_import)
 
         with open(os.path.join(RNRootPath, 'app', 'pages', 'index.js'), 'w') as indexFile:
             indexFile.write(result_route)
+
 
 # 创建相应页面的路由index.js
 
@@ -105,7 +110,6 @@ def createPageIndex(pythonPath, RNRootPath, pageName):
     pagePath = os.path.join(RNRootPath, 'app', 'pages', pageName)
     os.system('mkdir -p %s' % pagePath)
     with open(os.path.join(pythonPath, 'templet', 'page_index_tmp.js'), 'r') as tempIndexFile:
-
         import_replace_str = 'import %s from \'./%s\';\n' % (
             pageName[:1].upper() + pageName[1:], pageName[:1].upper() + pageName[1:])
         path_replace_str = pageName
@@ -117,11 +121,12 @@ def createPageIndex(pythonPath, RNRootPath, pageName):
         temp = tempIndexFile.read()
         result_import, num_import = re_import.subn(import_replace_str, temp)
         result_path, num_path = re_path.subn(path_replace_str, result_import)
-        result_route, num_reoute = re_route.subn(
+        result_route, num_route = re_route.subn(
             route_replace_str, result_path)
 
         with open(os.path.join(pagePath, 'index.js'), 'w') as indexFile:
             indexFile.write(result_route)
+
 
 # 创建相应页面的js
 
@@ -161,16 +166,15 @@ def createPage(pythonPath, RNRootPath, pageName, pageComp):
         with open(os.path.join(pagePath, '%s.js' % name), 'w') as nameFile:
             nameFile.write(result_name)
 
+
 # 读取配置文件，获取需要的插件信息，然后初始化
 
 
 def init(pythonPath):
-
     config = configparser.ConfigParser()
 
     # 读取配置文件
     with open(os.path.join(pythonPath, 'config.tfn'), 'r') as configFile:
-
         config.readfp(configFile)
 
         # 需要创建的RN工程名，默认AutoGenRNDemo
@@ -194,7 +198,7 @@ def init(pythonPath):
                 pythonPath,
                 'templet',
                 'app'),
-                RNRootPath))
+             RNRootPath))
 
         # 修改index.android.js和index.ios.js文件
         modifyRootIndex(pythonPath, RNRootPath, RNProjName)
@@ -247,7 +251,6 @@ def init(pythonPath):
 
 
 if __name__ == '__main__':
-
     # 当前python文件的路径
     pythonPath = os.path.split(os.path.realpath(__file__))[0]
 
